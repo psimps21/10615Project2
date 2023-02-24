@@ -51,4 +51,40 @@ def read_files(path):
                 np.save(f, genre_img_arr)
 
 
-read_files('images_by_genre')
+img = load_img('keaty_tom_2.jpeg')
+width, height = img.size
+
+img = img.crop((0, 0, width, width))
+
+img_np = img_to_arr(img)
+
+np.save('keaty_tom.npy', img_np)
+
+
+# read_files('images_by_genre')
+
+# disco = np.load('processed_data/disco.npy')
+# electro = np.load('processed_data/electro.npy')
+# folk = np.load('processed_data/folk.npy')
+# rap = np.load('processed_data/rap.npy')
+# rock = np.load('processed_data/rock.npy')
+#
+# sizes = [disco.shape[0]//5, electro.shape[0]//5, folk.shape[0]//5, rap.shape[0]//5, rock.shape[0]//5]
+#
+# labels = np.repeat(0, len(disco[sizes[0]*4:]))
+# labels = np.concatenate((labels, np.repeat(1, len(electro[sizes[1]*4:]))))
+# labels = np.concatenate((labels, np.repeat(2, len(folk[sizes[2]*4:]))))
+# labels = np.concatenate((labels, np.repeat(3, len(rap[sizes[3]*4:]))))
+# labels = np.concatenate((labels, np.repeat(4, len(rock[sizes[4]*4:]))))
+#
+# np.save('batched_data/b5_labels.npy', labels)
+
+# batch_5 = np.concatenate((
+#     disco[sizes[0]*4:],
+#     electro[sizes[1]*4:],
+#     folk[sizes[2]*4:],
+#     rap[sizes[3]*4:],
+#     rock[sizes[4]*4:]
+# ), axis=0)
+#
+# np.save('batched_data/b5.npy', batch_5)
