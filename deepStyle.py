@@ -7,7 +7,7 @@ from vgg_model import AgnosticModel
 import numbers
 import math
 import torch.nn.functional as F
-from deepdream import gradient_ascent
+from tqdm import tqdm
 
 """
 From this tutorial: https://github.com/gordicaleksa/pytorch-deepdream/blob/master/deepdream.py
@@ -70,7 +70,7 @@ class CascadeGaussianSmoothing(torch.nn.Module):
         return (grad1 + grad2 + grad3) / 3
 
 
-def deep_style(img, model, label=None, style=None, lr=0.001):
+def deep_style(img, model, label=None, lr=0.001):
     # Convert image to pytorch tensor (with gradient)
     new_img = np.zeros((1, 224, 224, 3))
     new_img[0] = img / 255.0
@@ -86,59 +86,50 @@ def deep_style(img, model, label=None, style=None, lr=0.001):
     # Define loss fun
     loss = torch.nn.CrossEntropyLoss()
 
-    # def gradient_ascent(config, model, input_tensor, layer_ids_to_use, iteration):
     config = {
         'num_gradient_ascent_iterations': 10,
         'smoothing_coefficient': 0.5,
         'lr': 0.09
     }
 
-    for i in range(10):
-        gradient_ascent(config, model, input, ['fc'], i)
+    # Pass image through model
+    out = model(input)
 
+    # Compute loss and gradient
+    l = loss(out, label)
+    l.backward()
 
-    # # Pass image through model
-    # out = model(input)
-    #
-    # # Compute loss and gradient
-    # l = loss(out, label)
-    # l.backward()
-    #
-    # # Apply gradient to image
-    # grad = input.grad.data
-    #
-    # sigma = 0.1
-    # smooth_grad = CascadeGaussianSmoothing(kernel_size=9, sigma=sigma)(grad)  # "magic number" 9 just works well
-    #
-    # g_std = torch.std(smooth_grad)
-    # g_mean = torch.mean(smooth_grad)
-    # smooth_grad = grad - g_mean
-    # smooth_grad = smooth_grad / g_std
-    #
-    # input.data += lr * smooth_grad
-    #
-    # # Clear gradients and clamp values
-    # input.grad.data.zero_()
+    # Apply gradient to image
+    grad = input.grad.data
+
+    sigma = 0.1
+    smooth_grad = CascadeGaussianSmoothing(kernel_size=9, sigma=sigma)(grad)  # "magic number" 9 just works well
+
+    g_std = torch.std(smooth_grad)
+    g_mean = torch.mean(smooth_grad)
+    smooth_grad = grad - g_mean
+    smooth_grad = smooth_grad / g_std
+
+    input.data += lr * smooth_grad
+
+    # Clear gradient
+    input.grad.data.zero_()
 
     return input.detach().numpy()
 
 
 with open('resnet_trained.obj', 'rb') as f:
     model = pickle.load(f)
-img_arr = np.load('keaty_tom.npy')
-
-im2 = im.fromarray(img_arr)
-im2.show()
+img_arr = np.load('parker_pic.npy')
 
 new_img_arr = np.copy(img_arr)
 
-for i in range(2):
-    new_img_arr = deep_style(new_img_arr, model, label=4)
-    new_img_arr = np.swapaxes(new_img_arr, 1, 3)[0]
+for i in tqdm(range(1000)):
+    new_img_arr = deep_style(new_img_arr, model, label=0)
+    new_img_arr = np.swapaxes(new_img_arr, 1, 3)[0] * 255.0
 
-new_img_arr = np.minimum(new_img_arr, 1.0)
+new_img_arr = np.minimum(new_img_arr, 255.0)
 new_img_arr = np.maximum(new_img_arr, 0.0)
-new_img_arr *= 255.0
 new_img_arr = np.floor(new_img_arr)
 new_img_arr = new_img_arr.astype(np.uint8)
 
