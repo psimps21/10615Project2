@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import os
+import csv
 from tqdm import tqdm
 
 
@@ -17,6 +18,23 @@ def add_to_arr(arr1, arr2):
     return np.append(arr1, arr2)
 
 
+def resize_all(arr, newsize):
+    new_arr = np.empty((1, newsize, newsize, 3))
+    flag = True
+
+    for row in arr:
+        img = Image.fromarray(row, 'RGB')
+        img = img.resize((newsize, newsize))
+
+        if flag:
+            new_arr[0] = np.asarray(img)
+            flag = False
+        else:
+            new_arr = np.append(new_arr, np.asarray(img).reshape((1, newsize, newsize, 3)), axis=0)
+
+    return new_arr
+
+
 def read_files(path):
     for subdir, dirs, files in os.walk(path):
         genres = ['disco', 'electro', 'folk', 'rap', 'rock']
@@ -26,39 +44,65 @@ def read_files(path):
 
         if len(sd_arr) > 1 and sd_arr[1] in genres:
             print(sd_arr[1])
+            labels = []
 
             for file in tqdm(files):
-                if genre_img_arr is None:
-                    img = load_img(os.path.join(subdir, file))
-                    np_img = img_to_arr(img)
+                labels.append(file.split('.')[0])
 
-                    genre_img_arr = np.empty((1, np_img.shape[0], np_img.shape[1], np_img.shape[2]))
-                    genre_img_arr[0] = np_img
+            #     if genre_img_arr is None:
+            #         img = load_img(os.path.join(subdir, file))
+            #         np_img = img_to_arr(img)
+            #
+            #         genre_img_arr = np.empty((1, np_img.shape[0], np_img.shape[1], np_img.shape[2]))
+            #         genre_img_arr[0] = np_img
+            #
+            #     else:
+            #         img = load_img(os.path.join(subdir, file))
+            #         if img.mode != 'RGB':
+            #             img = img.convert('RGB')
+            #
+            #         np_img = img_to_arr(img)
+            #
+            #         np_img = np_img.reshape((1, np_img.shape[0], np_img.shape[1], np_img.shape[2]))
+            #         genre_img_arr = np.append(genre_img_arr, np_img, axis=0)
+            #
+            #     # print(os.path.join(subdir, file))
+            #
+            # with open('processed_data/' + sd_arr[1] + '.npy', 'wb') as f:
+            #     np.save(f, genre_img_arr)
+            with open('processed_data/' + sd_arr[1] + '_labels.csv', 'w') as f:
+                csv.writer(f).writerows(labels)
 
-                else:
-                    img = load_img(os.path.join(subdir, file))
-                    if img.mode != 'RGB':
-                        img = img.convert('RGB')
 
-                    np_img = img_to_arr(img)
+# disco = np.load('cleaned_data/disco.npy')
+# electro = np.load('cleaned_data/electro.npy')
+# folk = np.load('cleaned_data/folk.npy')
+# rap = np.load('cleaned_data/rap.npy')
+# rock = np.load('cleaned_data/rock.npy')
+#
+# disco_100 = resize_all(disco, 100)
+# electro_100 = resize_all(electro, 100)
+# folk_100 = resize_all(folk, 100)
+# rap_100 = resize_all(rap, 100)
+# rock_100 = resize_all(rock, 100)
+#
+# np.save('cleaned_data/disco_100.npy', disco_100)
+# np.save('cleaned_data/electro_100.npy', electro_100)
+# np.save('cleaned_data/folk_100.npy', folk_100)
+# np.save('cleaned_data/rap_100.npy', rap_100)
+# np.save('cleaned_data/rock_100.npy', rock_100)
 
-                    np_img = np_img.reshape((1, np_img.shape[0], np_img.shape[1], np_img.shape[2]))
-                    genre_img_arr = np.append(genre_img_arr, np_img, axis=0)
-
-                # print(os.path.join(subdir, file))
-
-            with open('processed_data/' + sd_arr[1] + '.npy', 'wb') as f:
-                np.save(f, genre_img_arr)
-
-
-img = load_img('keaty_tom_2.jpeg')
+img = load_img('parker_pic.jpg')
 width, height = img.size
 
 img = img.crop((0, 0, width, width))
+img = img.resize((224, 224))
+
+img.save('parker_pic_224.jpg')
 
 img_np = img_to_arr(img)
 
-np.save('keaty_tom.npy', img_np)
+np.save('parker_pic.npy', img_np)
 
 
 # read_files('images_by_genre')
